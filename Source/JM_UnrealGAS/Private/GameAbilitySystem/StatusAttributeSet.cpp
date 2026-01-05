@@ -25,7 +25,12 @@ void UStatusAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute
 		// 최대 체력을 넘지 않게 하기
 		// 체력이 음수가 되지 않게 하기
 
+		float MaxHealthVal = GetMaxHealth();
+
+		NewValue = FMath::Clamp(NewValue, 0.f, MaxHealthVal);
 	}
+
+	
 }
 
 void UStatusAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)

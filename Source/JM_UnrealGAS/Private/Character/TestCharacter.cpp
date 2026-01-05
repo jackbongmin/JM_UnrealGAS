@@ -54,3 +54,17 @@ void ATestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 }
 
+void ATestCharacter::ChangeHealth(float InAmount)
+{
+	if (AbilitySystemComponent && StatusAttributeSet)
+	{
+		AbilitySystemComponent->ApplyModToAttribute(
+			UStatusAttributeSet::GetHealthAttribute(),
+			EGameplayModOp::Additive,
+			InAmount
+		);
+
+		UE_LOG(LogTemp, Log, TEXT("체력 변경 시도: %.1f"), InAmount);
+	}
+}
+

@@ -36,4 +36,8 @@ private:
 	UPROPERTY()
 	TObjectPtr<UStatusAttributeSet> StatusAttributeSet = nullptr;
 
+public:
+	UFUNCTION(BlueprintCallable, Category = "GAS")
+	void ChangeHealth(float InAmount);
+
 };
