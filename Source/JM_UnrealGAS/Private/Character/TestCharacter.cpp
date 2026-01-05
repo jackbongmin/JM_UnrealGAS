@@ -20,6 +20,16 @@ ATestCharacter::ATestCharacter()
 
 }
 
+void ATestCharacter::TestHealthChange(float Amount)
+{
+	if (StatusAttributeSet)
+	{
+		float CurrentValue = StatusAttributeSet->GetHealth();
+		StatusAttributeSet->SetHealth(CurrentValue + Amount);
+	}
+
+}
+
 // Called when the game starts or when spawned
 void ATestCharacter::BeginPlay()
 {
@@ -30,13 +40,18 @@ void ATestCharacter::BeginPlay()
 	if (AbilitySystemComponent)
 	{
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);	/// 어빌리티 시스템 컴포넌트 초기화
+
+		// 초기화 이후에만 가능
+		FOnGameplayAttributeValueChange& onHealthChange = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UStatusAttributeSet::GetHealthAttribute());
+
+		onHealthChange.AddUObject(this, &ATestCharacter::OnHealthChange);	// Health가 변경되었을 때 실행될 함수 바인딩
 	}
 
-	if (StatusAttributeSet)
-	{
-		//StatusAttributeSet->Health = 50.0f;	// 절대 안됨
-		StatusAttributeSet->SetHealth(50.f);	// 무조건 Setter로 변경해야 한다.
-	}
+	//if (StatusAttributeSet)
+	//{
+	//	StatusAttributeSet->Health = 50.0f;	// 절대 안됨
+	//	StatusAttributeSet->SetHealth(50.f);	// 무조건 Setter로 변경해야 한다.
+	//}
 	
 }
 
@@ -45,6 +60,9 @@ void ATestCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	FString healthString = FString::Printf(TEXT("Health: %.1f / %.1f"), StatusAttributeSet->GetHealth(), StatusAttributeSet->GetMaxHealth());
+	DrawDebugString(GetWorld(), GetActorLocation(), healthString, nullptr, FColor::White, 0, true);
+
 }
 
 // Called to bind functionality to input
@@ -52,5 +70,10 @@ void ATestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+}
+
+void ATestCharacter::OnHealthChange(const FOnAttributeChangeData& InData)
+{
+	UE_LOG(LogTemp, Log, TEXT("Health Change: %.1f -> %.1f"), InData.OldValue, InData.NewValue);
 }
 
