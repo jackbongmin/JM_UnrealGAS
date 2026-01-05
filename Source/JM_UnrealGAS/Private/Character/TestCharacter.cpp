@@ -3,7 +3,9 @@
 
 #include "Character/TestCharacter.h"
 #include "AbilitySystemComponent.h"
-#include "GameAbilitySystem/StatusAttributeSet.h"
+#include "GameAbilitySystem/ResourceAttributeSet.h"
+#include "Components/WidgetComponent.h"
+#include "Interface/TwinResource.h"
 
 
 // Sets default values
@@ -12,20 +14,24 @@ ATestCharacter::ATestCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+
+	BarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("WidgetComponent"));
+	BarWidgetComponent->SetupAttachment(RootComponent);
+
 	// 컴포넌트 생성
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 
 	// 어트리뷰트셋 생성
-	StatusAttributeSet = CreateDefaultSubobject<UStatusAttributeSet>(TEXT("Status"));
+	ResourceAttributeSet = CreateDefaultSubobject<UResourceAttributeSet>(TEXT("Status"));
 
 }
 
 void ATestCharacter::TestHealthChange(float Amount)
 {
-	if (StatusAttributeSet)
+	if (ResourceAttributeSet)
 	{
-		float CurrentValue = StatusAttributeSet->GetHealth();
-		StatusAttributeSet->SetHealth(CurrentValue + Amount);
+		float CurrentValue = ResourceAttributeSet->GetHealth();
+		ResourceAttributeSet->SetHealth(CurrentValue + Amount);
 	}
 
 }
@@ -42,16 +48,28 @@ void ATestCharacter::BeginPlay()
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);	/// 어빌리티 시스템 컴포넌트 초기화
 
 		// 초기화 이후에만 가능
-		FOnGameplayAttributeValueChange& onHealthChange = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UStatusAttributeSet::GetHealthAttribute());
+		FOnGameplayAttributeValueChange& onHealthChange = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UResourceAttributeSet::GetHealthAttribute());
 
 		onHealthChange.AddUObject(this, &ATestCharacter::OnHealthChange);	// Health가 변경되었을 때 실행될 함수 바인딩
+
 	}
 
-	//if (StatusAttributeSet)
-	//{
-	//	StatusAttributeSet->Health = 50.0f;	// 절대 안됨
-	//	StatusAttributeSet->SetHealth(50.f);	// 무조건 Setter로 변경해야 한다.
-	//}
+	if (ResourceAttributeSet)
+	{
+		if (BarWidgetComponent && BarWidgetComponent->GetWidget())
+		{
+			if (BarWidgetComponent->GetWidget()->Implements<UTwinResource>())
+			{
+				ITwinResource::Execute_UpdateMaxHealth(BarWidgetComponent->GetWidget(), ResourceAttributeSet->GetMaxHealth());
+				ITwinResource::Execute_UpdateCurrentHealth(BarWidgetComponent->GetWidget(), ResourceAttributeSet->GetHealth());
+				
+				ITwinResource::Execute_UpdateMaxMana(BarWidgetComponent->GetWidget(), ResourceAttributeSet->GetMaxMana());
+				ITwinResource::Execute_UpdateCurrentMana(BarWidgetComponent->GetWidget(), ResourceAttributeSet->GetMana());
+			}
+		}
+		//StatusAttributeSet->Health = 50.0f;	// 절대 안됨
+		//StatusAttributeSet->SetHealth(50.f);	// 무조건 Setter로 변경해야 한다.
+	}
 	
 }
 
@@ -60,9 +78,11 @@ void ATestCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	FString healthString = FString::Printf(TEXT("Health: %.1f / %.1f"), StatusAttributeSet->GetHealth(), StatusAttributeSet->GetMaxHealth());
-	DrawDebugString(GetWorld(), GetActorLocation(), healthString, nullptr, FColor::White, 0, true);
-
+	if (ResourceAttributeSet)
+	{
+		FString healthString = FString::Printf(TEXT("Health: %.1f / %.1f"), ResourceAttributeSet->GetHealth(), ResourceAttributeSet->GetMaxHealth());
+		DrawDebugString(GetWorld(), GetActorLocation(), healthString, nullptr, FColor::White, 0, true);
+	}
 }
 
 // Called to bind functionality to input
@@ -75,5 +95,12 @@ void ATestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 void ATestCharacter::OnHealthChange(const FOnAttributeChangeData& InData)
 {
 	UE_LOG(LogTemp, Log, TEXT("Health Change: %.1f -> %.1f"), InData.OldValue, InData.NewValue);
+	ITwinResource::Execute_UpdateCurrentHealth(BarWidgetComponent->GetWidget(), ResourceAttributeSet->GetHealth());
+}
+
+void ATestCharacter::OnManaChange(const FOnAttributeChangeData& InData)
+{
+	UE_LOG(LogTemp, Log, TEXT("Mana Change: %.1f -> %.1f"), InData.OldValue, InData.NewValue);
+	ITwinResource::Execute_UpdateCurrentMana(BarWidgetComponent->GetWidget(), ResourceAttributeSet->GetMana());
 }
 
