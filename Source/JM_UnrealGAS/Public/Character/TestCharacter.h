@@ -4,9 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "abilitysysteminterface.h"
+#include "AbilitySystemInterface.h"
 #include "TestCharacter.generated.h"
 
+class UStatusAttributeSet;
 
 UCLASS()
 class JM_UNREALGAS_API ATestCharacter : public ACharacter, public IAbilitySystemInterface
@@ -17,7 +18,7 @@ public:
 	// Sets default values for this character's properties
 	ATestCharacter();
 
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override{
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override {
 		return AbilitySystemComponent;
 	};
 
@@ -30,4 +31,9 @@ protected:
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Ability")
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
+
+private:
+	UPROPERTY()
+	TObjectPtr<UStatusAttributeSet> StatusAttributeSet = nullptr;
+
 };
