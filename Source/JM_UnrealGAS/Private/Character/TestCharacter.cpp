@@ -45,7 +45,7 @@ void ATestCharacter::BeginPlay()
 
 	if (AbilitySystemComponent)
 	{
-		AbilitySystemComponent->InitAbilityActorInfo(this, this);	/// 어빌리티 시스템 컴포넌트 초기화
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);	// 어빌리티 시스템 컴포넌트 초기화
 
 		// 초기화 이후에만 가능
 		FOnGameplayAttributeValueChange& onHealthChange = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UResourceAttributeSet::GetHealthAttribute());
