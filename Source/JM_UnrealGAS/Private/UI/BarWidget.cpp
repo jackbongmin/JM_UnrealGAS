@@ -14,11 +14,13 @@ void UBarWidget::SetProgressColor(FLinearColor InColor)
 void UBarWidget::UpdateCurrent_Implementation(float InValue)
 {
 	Current->SetText(FText::AsNumber(FMath::RoundToInt(InValue)));
-	BackgroundProgressBar->SetPercent(InValue / MaxValue);
+	CurrentValue = InValue;
+	BackgroundProgressBar->SetPercent(CurrentValue / MaxValue);
 }
 
 void UBarWidget::UpdateMax_Implementation(float InValue)
 {
-	MaxValue = InValue;
 	Max->SetText(FText::AsNumber(FMath::RoundToInt(InValue)));
+	MaxValue = InValue;
+	BackgroundProgressBar->SetPercent(CurrentValue / MaxValue);
 }

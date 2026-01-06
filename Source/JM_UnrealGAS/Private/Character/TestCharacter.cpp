@@ -4,6 +4,7 @@
 #include "Character/TestCharacter.h"
 #include "AbilitySystemComponent.h"
 #include "GameAbilitySystem/ResourceAttributeSet.h"
+#include "GameAbilitySystem/StatusAttributeSet.h"
 #include "Components/WidgetComponent.h"
 #include "Interface/TwinResource.h"
 
@@ -22,9 +23,11 @@ ATestCharacter::ATestCharacter()
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 
 	// 어트리뷰트셋 생성
-	ResourceAttributeSet = CreateDefaultSubobject<UResourceAttributeSet>(TEXT("Status"));
-
+	ResourceAttributeSet = CreateDefaultSubobject<UResourceAttributeSet>(TEXT("ResourceSet"));
+	StatusAttributeSet = CreateDefaultSubobject<UStatusAttributeSet>(TEXT("StatusSet"));
 }
+
+
 
 void ATestCharacter::TestHealthChange(float Amount)
 {
@@ -34,6 +37,46 @@ void ATestCharacter::TestHealthChange(float Amount)
 		ResourceAttributeSet->SetHealth(CurrentValue + Amount);
 	}
 
+}
+
+void ATestCharacter::TestSetByCaller(float Amount)
+{
+	if (AbilitySystemComponent)
+	{
+		FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+		FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(TestEffectClass, 0, EffectContext);
+		if (SpecHandle.IsValid())
+		{
+			SpecHandle.Data->SetSetByCallerMagnitude(Tag_EffectDamage, Amount);
+			AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+		}
+	}
+
+}
+
+void ATestCharacter::TestAddInfiniteEffect()
+{
+	if (TestInfiniteEffectClass && AbilitySystemComponent)
+	{
+		FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+		EffectContext.AddInstigator(this, this);
+
+		FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(
+			TestInfiniteEffectClass, 0, EffectContext);
+
+		if (SpecHandle.IsValid())
+		{
+			TestInfinite = AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+		}
+	}
+}
+
+void ATestCharacter::TestRemoveInfiniteEffect()
+{
+	if (TestInfinite.IsValid())
+	{
+		AbilitySystemComponent->RemoveActiveGameplayEffect(TestInfinite);
+	}
 }
 
 // Called when the game starts or when spawned
@@ -49,9 +92,16 @@ void ATestCharacter::BeginPlay()
 
 		// 초기화 이후에만 가능
 		FOnGameplayAttributeValueChange& onHealthChange = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UResourceAttributeSet::GetHealthAttribute());
-
 		onHealthChange.AddUObject(this, &ATestCharacter::OnHealthChange);	// Health가 변경되었을 때 실행될 함수 바인딩
 
+		FOnGameplayAttributeValueChange& onMaxHealthChange = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UResourceAttributeSet::GetMaxHealthAttribute());
+		onMaxHealthChange.AddUObject(this, &ATestCharacter::OnMaxHealthChange);
+
+		FOnGameplayAttributeValueChange& onManaChange = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UResourceAttributeSet::GetManaAttribute());
+		onManaChange.AddUObject(this, &ATestCharacter::OnManaChange);
+
+		FOnGameplayAttributeValueChange& onMaxManaChange = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UResourceAttributeSet::GetMaxManaAttribute());
+		onMaxManaChange.AddUObject(this, &ATestCharacter::OnMaxManaChange);
 	}
 
 	if (ResourceAttributeSet)
@@ -71,6 +121,7 @@ void ATestCharacter::BeginPlay()
 		//StatusAttributeSet->SetHealth(50.f);	// 무조건 Setter로 변경해야 한다.
 	}
 	
+	Tag_EffectDamage = FGameplayTag::RequestGameplayTag(FName("Effect.Damage"));
 }
 
 // Called every frame
@@ -98,9 +149,19 @@ void ATestCharacter::OnHealthChange(const FOnAttributeChangeData& InData)
 	ITwinResource::Execute_UpdateCurrentHealth(BarWidgetComponent->GetWidget(), ResourceAttributeSet->GetHealth());
 }
 
+void ATestCharacter::OnMaxHealthChange(const FOnAttributeChangeData& InData)
+{
+	ITwinResource::Execute_UpdateMaxHealth(BarWidgetComponent->GetWidget(), ResourceAttributeSet->GetMaxHealth());
+}
+
 void ATestCharacter::OnManaChange(const FOnAttributeChangeData& InData)
 {
 	UE_LOG(LogTemp, Log, TEXT("Mana Change: %.1f -> %.1f"), InData.OldValue, InData.NewValue);
 	ITwinResource::Execute_UpdateCurrentMana(BarWidgetComponent->GetWidget(), ResourceAttributeSet->GetMana());
+}
+
+void ATestCharacter::OnMaxManaChange(const FOnAttributeChangeData& InData)
+{
+	ITwinResource::Execute_UpdateMaxMana(BarWidgetComponent->GetWidget(), ResourceAttributeSet->GetMaxMana());
 }
 
