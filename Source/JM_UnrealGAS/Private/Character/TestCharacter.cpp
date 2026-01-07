@@ -3,8 +3,8 @@
 
 #include "Character/TestCharacter.h"
 #include "AbilitySystemComponent.h"
-#include "GameAbilitySystem/ResourceAttributeSet.h"
-#include "GameAbilitySystem/StatusAttributeSet.h"
+#include "GameAbilitySystem/AttributeSet/ResourceAttributeSet.h"
+#include "GameAbilitySystem/AttributeSet/StatusAttributeSet.h"
 #include "Components/WidgetComponent.h"
 #include "Interface/TwinResource.h"
 

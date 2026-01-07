@@ -4,6 +4,7 @@
 #include "Test/DamageZone.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "AbilitySystemInterface.h"
 
 // Sets default values
 ADamageZone::ADamageZone()
@@ -22,13 +23,58 @@ void ADamageZone::BeginPlay()
 
 void ADamageZone::OnBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
 {
+	//UE_LOG(LogTemp, Log, TEXT("OnBeginOverlap : %s"), *OtherActor->GetActorLabel());
+
 	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor);
+
+	const IAbilitySystemInterface* ASI = Cast<IAbilitySystemInterface>(OtherActor);
+	if (ASI)
+		ASC = ASI->GetAbilitySystemComponent();
+	ASC = OtherActor->FindComponentByClass<UAbilitySystemComponent>();
+
 	if (ASC)
 	{
-		FGameplayEffectContextHandle ConText = ASC->MakeEffectContext();
+		//UE_LOG(LogTemp, Log, TEXT("ASC OK : %s"), *OtherActor->GetActorLabel());
+		FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
+		ContextHandle.AddInstigator(this, this);
+
+		// Spec 생성
+		FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(DamageEffectClass, 1.0f, ContextHandle);
+
+		if (SpecHandle.IsValid())
+		{
+			// 이펙트 적용 및 핸들 반환
+			FActiveGameplayEffectHandle ActiveGEHandle = ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+
+			// 나중에 제거하기 위해 맵에 저장
+			ActiveEffectHandles.Add(ASC, ActiveGEHandle);
+
+			UE_LOG(LogTemp, Log, TEXT("Entered Damage Zone: %s"), *OtherActor->GetName());
+		}
 	}
+
 }
 
 void ADamageZone::OnEndOverlap(AActor* OverlappedActor, AActor* OtherActor)
 {
+	UE_LOG(LogTemp, Log, TEXT("OnEndOverlap : %s"), *OtherActor->GetActorLabel());
+	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor);
+
+	if (TargetASC)
+	{
+		// 이 ASC가 우리 맵에 있는지 확인 (우리가 건 이펙트가 있는지)
+		if (ActiveEffectHandles.Contains(TargetASC))
+		{
+			// 저장해둔 핸들을 찾아서
+			FActiveGameplayEffectHandle HandleToRemove = ActiveEffectHandles[TargetASC];
+
+			// 이펙트 제거
+			TargetASC->RemoveActiveGameplayEffect(HandleToRemove);
+
+			// 맵에서 삭제
+			ActiveEffectHandles.Remove(TargetASC);
+
+			UE_LOG(LogTemp, Log, TEXT("Exited Damage Zone: %s"), *OtherActor->GetName());
+		}
+	}
 }
