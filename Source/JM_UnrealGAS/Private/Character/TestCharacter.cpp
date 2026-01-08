@@ -111,6 +111,17 @@ void ATestCharacter::BeginPlay()
 				)
 			);
 		}
+		if (SuperJumpClass)
+		{
+			AbilitySystemComponent->GiveAbility(
+				FGameplayAbilitySpec(
+					SuperJumpClass,										// 어빌리클래스
+					1,													// 레벨
+					static_cast<int32>(EAbilityInputID::SuperJump),		// 입력 ID
+					this												// 소스
+				)
+			);
+		}
 
 		// 초기화 이후에만 가능
 		FOnGameplayAttributeValueChange& onHealthChange = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UResourceAttributeSet::GetHealthAttribute());
@@ -167,6 +178,7 @@ void ATestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	if (EnhancedInput)
 	{
 		EnhancedInput->BindAction(IA_Ability1, ETriggerEvent::Started, this, &ATestCharacter::OnAbility1Press);
+		EnhancedInput->BindAction(IA_Ability2, ETriggerEvent::Started, this, &ATestCharacter::OnAbility2Press);
 	}
 
 }
@@ -200,5 +212,21 @@ void ATestCharacter::OnAbility1Press()
 	{
 		AbilitySystemComponent->AbilityLocalInputPressed(static_cast<int32>(EAbilityInputID::Haste));
 	}
+}
+
+void ATestCharacter::OnAbility2Press()
+{
+	UE_LOG(LogTemp, Log, TEXT("Ability2 Pressed"));
+		AbilitySystemComponent->AbilityLocalInputPressed(static_cast<int32>(EAbilityInputID::SuperJump));
+}
+
+void ATestCharacter::OnAbility3Press()
+{
+	UE_LOG(LogTemp, Log, TEXT("Ability3 Pressed"));
+}
+
+void ATestCharacter::OnAbility3Release()
+{
+	UE_LOG(LogTemp, Log, TEXT("Ability3 Release"));
 }
 
