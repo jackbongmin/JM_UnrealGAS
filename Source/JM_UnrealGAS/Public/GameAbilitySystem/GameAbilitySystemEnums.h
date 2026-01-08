@@ -1,4 +1,4 @@
-
+#pragma once
 
 
 #include "CoreMinimal.h"
@@ -10,4 +10,5 @@ enum class EAbilityInputID : uint8
 {
 	Haste,
 	SuperJump,
+	ChargingJump,
 };

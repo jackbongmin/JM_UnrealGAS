@@ -122,6 +122,17 @@ void ATestCharacter::BeginPlay()
 				)
 			);
 		}
+		if (ChargingJumpClass)
+		{
+			AbilitySystemComponent->GiveAbility(
+				FGameplayAbilitySpec(
+					ChargingJumpClass,									// 어빌리티 클래스
+					1,													// 레벨
+					static_cast<int32>(EAbilityInputID::ChargingJump),	// 입력 ID
+					this												// 소스
+				)
+			);
+		}
 
 		// 초기화 이후에만 가능
 		FOnGameplayAttributeValueChange& onHealthChange = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UResourceAttributeSet::GetHealthAttribute());
@@ -179,6 +190,8 @@ void ATestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	{
 		EnhancedInput->BindAction(IA_Ability1, ETriggerEvent::Started, this, &ATestCharacter::OnAbility1Press);
 		EnhancedInput->BindAction(IA_Ability2, ETriggerEvent::Started, this, &ATestCharacter::OnAbility2Press);
+		EnhancedInput->BindAction(IA_Ability3, ETriggerEvent::Started, this, &ATestCharacter::OnAbility3Press);
+		EnhancedInput->BindAction(IA_Ability3, ETriggerEvent::Completed, this, &ATestCharacter::OnAbility3Release);
 	}
 
 }
@@ -207,7 +220,7 @@ void ATestCharacter::OnMaxManaChange(const FOnAttributeChangeData& InData)
 
 void ATestCharacter::OnAbility1Press()
 {
-	UE_LOG(LogTemp, Log, TEXT("Ability1 Pressed"));
+	UE_LOG(LogTemp, Log, TEXT("OnAbility1 Pressed"));
 	if (AbilitySystemComponent)
 	{
 		AbilitySystemComponent->AbilityLocalInputPressed(static_cast<int32>(EAbilityInputID::Haste));
@@ -216,17 +229,24 @@ void ATestCharacter::OnAbility1Press()
 
 void ATestCharacter::OnAbility2Press()
 {
-	UE_LOG(LogTemp, Log, TEXT("Ability2 Pressed"));
-		AbilitySystemComponent->AbilityLocalInputPressed(static_cast<int32>(EAbilityInputID::SuperJump));
+	UE_LOG(LogTemp, Log, TEXT("OnAbility2 Pressed"));
+	 AbilitySystemComponent->AbilityLocalInputPressed(static_cast<int32>(EAbilityInputID::SuperJump));
 }
 
 void ATestCharacter::OnAbility3Press()
 {
-	UE_LOG(LogTemp, Log, TEXT("Ability3 Pressed"));
+	UE_LOG(LogTemp, Log, TEXT("OnAbility3Press"));
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->AbilityLocalInputPressed(static_cast<int32>(EAbilityInputID::ChargingJump));
+	}
 }
 
 void ATestCharacter::OnAbility3Release()
 {
-	UE_LOG(LogTemp, Log, TEXT("Ability3 Release"));
+	UE_LOG(LogTemp, Log, TEXT("OnAbility3Release"));
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->AbilityLocalInputReleased(static_cast<int32>(EAbilityInputID::ChargingJump));
+	}
 }
-
