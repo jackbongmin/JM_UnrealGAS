@@ -3,6 +3,7 @@
 
 #include "Character/TestCharacter.h"
 #include "AbilitySystemComponent.h"
+#include "AbilitySystemBlueprintLibrary.h"
 #include "GameAbilitySystem/AttributeSet/ResourceAttributeSet.h"
 #include "GameAbilitySystem/AttributeSet/StatusAttributeSet.h"
 #include "GameAbilitySystem/GameAbilitySystemEnums.h"
@@ -87,6 +88,63 @@ void ATestCharacter::TestAbility()
 		// 클래스 어빌리티 발동시키기
 		AbilitySystemComponent->TryActivateAbilityByClass(HasteClass);
 	}
+}
+
+void ATestCharacter::TestLineTrace()
+{
+	// Line : 시작 위치, 도착 위치
+	// Ray : 시작 위치, 방향
+
+	FVector Start = GetActorLocation();		// 체크 시작 위치
+	FVector End = Start + GetActorForwardVector() * 1000.0f;	// 체크 끝나는 위치
+
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);	// 자기 자신은 체크 안함
+
+	FHitResult HitResult;	// 충돌 결과를 저장할 구조체
+	bool bHit = GetWorld()->LineTraceSingleByObjectType(
+		HitResult,
+		Start,
+		End,
+		ECC_Pawn,	// 폰만 체크한다고 설정
+		QueryParams
+	);
+
+	if (bHit)
+	{
+		// 선에 걸린 폰이 있다.
+		UE_LOG(LogTemp, Log, TEXT("Hit"));
+		DrawDebugLine(GetWorld(), Start, HitResult.ImpactPoint, FColor::Yellow, false, 0.1f, 0, 1.0f);
+		DrawDebugPoint(GetWorld(), HitResult.ImpactPoint, 10.0f, FColor::Red, false, 0.1f);
+
+		AActor* Target = HitResult.GetActor();
+		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Target);
+		if (TargetASC && TestHitEffectClass)
+		{
+			UE_LOG(LogTemp, Log, TEXT("ASC와 이팩트 클래스 확인 완료"));
+			FGameplayEffectContextHandle Context = TargetASC->MakeEffectContext();
+			Context.AddHitResult(HitResult);				// 라인트레이스의 히트 결과 전달
+			Context.AddInstigator(GetInstigator(), this);
+
+			FGameplayEffectSpecHandle Spec = TargetASC->MakeOutgoingSpec(
+				TestHitEffectClass,
+				1,
+				Context
+			);
+			if (Spec.IsValid())
+			{
+				TargetASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+			}
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("No Hit"));
+		DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 0.1f, 0, 1.0f);
+	}
+
+	//GetWorld()->Linetrace
+
 }
 
 // Called when the game starts or when spawned
