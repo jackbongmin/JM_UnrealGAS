@@ -133,6 +133,7 @@ void ATestCharacter::TestLineTrace()
 			);
 			if (Spec.IsValid())
 			{
+
 				TargetASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 			}
 		}
